@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a tutorial for a basic walk through of making and analyzing B cell clonal families using [10x Genomics](https://www.10xgenomics.com/products/single-cell-immune-profiling) BCR (B cell receptor) sequencing data. The tutorial in it's entirey can be found in `airr_2026_tutorial.rmd`. Installing Dowser and its various dependencies locally is encouraged, but a [Docker container for this tutorial is also available](https://hub.docker.com/repository/docker/28charger/tyche-dowser/general).
+This is a tutorial for a basic walk through of making and analyzing B cell clonal families using [10x Genomics](https://www.10xgenomics.com/products/single-cell-immune-profiling) BCR (B cell receptor) sequencing data. The tutorial in it's entirey can be found in `airr_2026_tutorial.rmd`. Installing Dowser and its various dependencies locally is encouraged, but a [Docker container for this tutorial is also available](https://hub.docker.com/repository/docker/colejensen/tyche-dowser/general).
 
 Knowledge of using R is assumed. Additionally, various preprocessing steps have been assumed to be done. Further instruction for how to do said sets can be explained in other software tutorials such AIRR-flow or in be found in the [Immcantation tutorials](https://immcantation.readthedocs.io/en/stable/getting_started/10x_tutorial.html#assign-v-d-and-j-genes-using-igblast).
 
@@ -15,9 +15,11 @@ In this tutorial we will use various programs/languages. Below are instructions 
 #### Docker
 If you plan to use docker pull and use this container:
 ```bash
-docker pull 28charger/tyche-dowser:latest
-docker run -it -v /path/to/your/data:/data 28charger/tyche-dowser:latest
+docker pull colejensen/tyche-dowser:latest
+docker run -it -p 8787:8787 colejensen/tyche-dowser:latest
+docker run -d -p 8787:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
+Then go to http://localhost:8787 in your broswser and follow along! The username and password is rstudio. The tutorial can be found in /data.
 
 #### Dowser
 Dowser is an R package with various dependencies. Below are instructions on how get Dowser to install locally.

@@ -24,53 +24,17 @@ You may also reference [this page](https://immcantation.readthedocs.io/en/stable
 
 ## Getting started
 
-We will be using a simulated dataset generated using [simble](https://github.com/hoehnlab/simble/tree/main#). You can download the data from [source](). 
+We will be using a simulated dataset generated using [simble](https://github.com/hoehnlab/simble/tree/main#). It can be found in `data/all_samples_airr.tsv`
 
-#### Install and load libraries
-
-Note that you might need to install several Bioconductor packages that are dependencies. 
-```{r}
-# Biocondutor dependencies first 
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-
-biopackages <- c("ggtree", "Biostrings", "GenomicAlignments", "IRanges", "pwalgin")
-new_biopackages <- biopackages[!(biopackages %in% installed.packages())]
-if (length(new_biopackages)) {BiocManager::install(new_biopackages)}
-```
-
-```{r}
-# now the CRAN dependencies
-packages <- c("airr", "alakazam", "data.table", "dowser", "dplyr", "ggplot2", 
-              "scoper")
-new_pkg <- packages[!(packages %in% installed.packages())]
-if (length(new_pkg)) {install.packages(new_pkg, dependencies = TRUE)}
-
-# call the packages
-packages <- append(packages, biopackages)
-for (n in seq_along(packages)) {
-  suppressPackageStartupMessages(library(packages[n], character.only = TRUE))
-  cat(paste0(packages[n], ": ", packageVersion(packages[n]), "\n")) # print simplified package versions
-}
-rm(biopackages, new_biopackages, packages, new_pkg, n)
-```
-
-For the UCA portion of this tutorial will also need a few python packages installed.
-```{bash, eval=FALSE, class.source="bg-info", class.output="bg-info"}
-# run this code in a command terminal, not an R terminal
-pip install biopython logomaker matplotlib numpy olga pandas scipy
-```
-
-It is worth noting that sometimes the Python version you install these packages to is not the same as what R will call. Please double-check the Python executable. If you are using a virtual environment, it is possible that you have installed the packages in Python, pointed to the right executable, and still end up with an error due to the Python package not being installed. To check if the packages are installed and R can use them, you can run:
-```{r, eval=FALSE}
-# python3 might not be your call -- it could just be called python
-system2("python3", args = c("-m", "pip", "install", "missing package name", "missing package name 2"))
-```
 
 #### Read in the data 
+
 ```{r, warning=FALSE}
 library(dowser)
 data <- airr::read_rearrangement(".../all_samples_airr.tsv")
+data$v_germline_length <- as.numeric(data$v_germline_length)
+data$d_germline_length <- as.numeric(data$d_germline_length)
+data$j_germline_length <- as.numeric(data$j_germline_length)
 ```
 
 ## Data preprocessing
@@ -98,31 +62,18 @@ comb <- resolveLightChains(data, cell = "cell_id", nproc = 1)
 
 The goal is to reconstruct the sequence of the unmutated ancestor of each clone using a reference database of known alleles ([IMGT](http://www.imgt.org)), before building B cell lineage trees. Due to the challenging nature of accurately inferring the D region and the junction region for BCR sequences, this region is masked with `N`. Note that occasionally errors are thrown for some clones - this is typical and usually results in those clones being excluded.
 
-In the example below, we read in the IMGT germline references from our Docker container. If you're using a local installation, you can download the most up-to-date reference genome by cloning the Immcantation repository and running the script:
-```{bash, eval=FALSE, class.source="bg-info", class.output="bg-info"}
-# get the script
-wget https://github.com/immcantation/immcantation/tree/master/scripts
-# run the script
-bash fetch_imgtdb.sh
-
-# you can also copy the imgt folder from docker as well dir = "/usr/local/share/germlines/imgt/"
-```
-
 Now we can use those sequences are references when creating germlines for the data
 ```{r, warning=FALSE, message=FALSE}
-# read in IMGT data if downloaded on your own (above)
-references <- readIMGT(dir = "imgt/human/vdj")
+references <- readIMGT(dir = "data/imgt/human/vdj")
 
-# reconstruct germlines
 comb <- createGermlines(comb, references, nproc = 1, clone = "clone_subgroup_id")
-glimpse(comb)
 ```
 
 ### Format clones
 
 In the rearrangement table, each row corresponds to a sequence, and each column is information about that sequence. We will create a new data structure, where each row is a clonal cluster, and each column is information about that clonal cluster. The function `formatClones` performs this processing and has options that are relevant to determine how the trees can be built and visualized. For example, `traits` determines the columns from the rearrangement data that will be included in the `clones` object, and will also be used to determine the uniqueness of the sequences, so they are not collapsed. To create H+L trees, specify `chain = "HL"`.
 ```{r, warning=FALSE}
-clones <- dowser::formatClones(comb, chain = "HL", nproc = 1, split_light = TRUE, traits = "sample_time")
+clones <- formatClones(comb, chain = "HL", nproc = 1, split_light = TRUE, traits = "sample_time")
 ```
 
 ### Build trees
@@ -133,43 +84,34 @@ For multi-partitioned trees, you need to specify that you want the construction 
 
 Each of these methods now supports building trees with both heavy and light chains. IgPhyML and RAxML also support multi-paritioned tree construction, paritioning on the heavy and light chain sequences seperately. 
 ```{r, warning=FALSE}
+exec <- "/programs/igphyml/src/igphyml"
 trees <- getTrees(clones, build = "igphyml", nproc = 1, exec = exec, partition = "hl")
 ```
 
-### Reconstruct intermediate sequences
+### Plot the trees and reconstruct intermediate sequences
 
-Sequences of intermediate nodes are automatically reconstructed during the tree build process. To retrieve them, first plot the node numbers for each node. The function `collapseNodes` can help clean up the tree plots. 
-
-Get the predicted intermediate sequence at an internal node in the second largest tree (dots represent IMGT gaps):
+Regardless of how you build trees, they are visualized in the same manner with the `plotTrees` function. This will return a list of `ggplot` objects in the same order as the input object. Here, we color the tips by the `sample_time` value because we specified that column in the `formatClones` step.
 ```{r, warning=FALSE}
 trees <- collapseNodes(trees)
 
 trees <- scaleBranches(trees)
-plots_all <- plotTrees(trees, node_nums = TRUE, labelsize = 6, scale = 5)[[2]] +
-               geom_tippoint(aes(# simble stuff )) +
-               geom_tiplab(aes(label = simble stuff), offset = 0.002)
+plots_all <- plotTrees(trees, node_nums = TRUE, tips = "sample_time")
 
 print(plots_all)
 ```
 
+Sequences of intermediate nodes are automatically reconstructed during the tree build process. To retrieve them, first plot the node numbers for each node. The function `collapseNodes` can help clean up the tree plots. 
+
+Get the predicted intermediate sequence at an internal node in the second largest tree (dots represent IMGT gaps):
 ```{r}
-# get sequence at node 20 for the first clone_id in the trees
-getNodeSeq(trees, clone = trees$clone_id[1], node = 20)
+# get sequence at node 24 for the first clone_id in the trees
+getNodeSeq(trees, clone = trees$clone_id[1], node = 24)
 ```
 
-### Visualize trees
-
-Regardless of how you build trees, they are visualized in the same manner with the `plotTrees` function. This will return a list of `ggplot` objects in the same order as the input object. Here, we color the tips by the `day` value because we specified that column in the `formatClones` step.
-
-Plot all of the trees:
-```{r, warning=FALSE}
-plots_all <- plotTrees(trees, tips = "sample_time")
-plots_all[[1]]
-```
+### Save the tree plots
 
 You can directly save the tree plots to PDFs using `treesToPDF`.
 ```{r, eval = FALSE}
-# save the tree plots 
 treesToPDF(plots_all, "file_path")
 ```
 
@@ -177,12 +119,12 @@ treesToPDF(plots_all, "file_path")
 
 The unmuated common ancestor (UCA) is the full length inferred naive BCR sequence. Dowser now supports this inference for both single and paired chain analysis. Dowser uses a combination of tree-based statistics and VDJ combination probabiliates provided by OLGA. As part of this, you will need to provide OLGA generation probabilites (either the [default models](https://github.com/statbiophys/OLGA/tree/master/olga/default_models) or create your own). This process also currently only uses [IgPhyML](https://igphyml.readthedocs.io/en/latest/). [IgPhyML compiling information](https://igphyml.readthedocs.io/en/latest/install.html) can be found here. 
 ```{r, warning=FALSE}
-clones_UCA <- getTreesAndUCAs(clones = clones[1,], data = comb,
+clones_UCA <- getTreesAndUCAs(clones = clones, data = comb,
                                references = references,
-                               exec = "igphyml/src/igphyml",
-                               model_folder = "../default_models/human_B_heavy",
-                               model_folder_igk = "../default_models/human_B_kappa",
-                               model_folder_igl = "../default_models/human_B_lambda",
+                               exec = exec,
+                               model_folder = "data/default_models/human_B_heavy",
+                               model_folder_igk = "data/default_models/human_B_kappa",
+                               model_folder_igl = "data/default_models/human_B_lambda",
                                nproc = 1, chain = "HL", 
                                partition = "hl", split_light = TRUE)
 ```
