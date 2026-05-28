@@ -19,7 +19,7 @@ docker pull colejensen/tyche-dowser:latest
 docker run -it -p 8787:8787 colejensen/tyche-dowser:latest
 docker run -d -p 8787:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
-Then go to http://localhost:8787 in your broswser and follow along! The username and password is rstudio. The tutorial can be found in /data.
+Then go to http://localhost:8787 in your browser and follow along! The username and password are rstudio. The tutorial can be found in /data.
 
 #### Dowser
 Dowser is an R package with various dependencies. Below are instructions on how get Dowser to install locally.
