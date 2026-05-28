@@ -55,6 +55,14 @@ This is a bit more tricky. [Please see instructions here](https://igphyml.readth
 ##### Compiling from source on Windows
 This is not available.
 
+#### IMGT References
+IMGT references will be needed. Run the following:
+```bash
+curl -O https://raw.githubusercontent.com/immcantation/immcantation/master/scripts/fetch_imgtdb.sh
+chmod +x fetch_imgtdb.sh
+./fetch_imgtdb.sh
+```
+
 #### Python
 First, make sure that Python is installed and accessible from the command line:
 ```bash
