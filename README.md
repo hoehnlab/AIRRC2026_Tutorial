@@ -1,189 +1,143 @@
 # AIRR 2026 Dowser Tutorial
 
-Tutorial outline:
-  * [Overview]
-* [Getting started]
-* [Define clonal groups]
-* [Create germlines]
-* [Build and visualize trees]
-* [UCA]
-* [TyCHE]
-
 ## Overview
 
-This is a tutorial for a basic walk through of making and analyzing B cell clonal families using [10x Genomics](https://www.10xgenomics.com/products/single-cell-immune-profiling) BCR (B cell receptor) sequencing data. For an RMD files to follow along locally, please use the file `airr_2025_tutorial.rmd`.
+This is a tutorial for a basic walk through of making and analyzing B cell clonal families using [10x Genomics](https://www.10xgenomics.com/products/single-cell-immune-profiling) BCR (B cell receptor) sequencing data. The tutorial in it's entirey can be found in `airr_2026_tutorial.rmd`. Installing Dowser and its various dependencies locally is encouraged, but a [Docker container for this tutorial is also available](https://hub.docker.com/repository/docker/28charger/tyche-dowser/general).
 
-Knowledge of using R is assumed. Additionally, various preprocessing steps have been assumed to be done. Further instruction for how to do said sets can be explained in other software tutorials (AIRR-flow) or in [Immcantation tutorials](https://immcantation.readthedocs.io/en/stable/getting_started/10x_tutorial.html#assign-v-d-and-j-genes-using-igblast).
-
-You may also reference [this page](https://immcantation.readthedocs.io/en/stable/docker/pipelines.html) for an example pipeline script to process 10x data with Immcantation's [changeo-10x](https://bitbucket.org/kleinstein/immcantation/src/master/pipelines/changeo-10x.sh) example script.
+Knowledge of using R is assumed. Additionally, various preprocessing steps have been assumed to be done. Further instruction for how to do said sets can be explained in other software tutorials such AIRR-flow or in be found in the [Immcantation tutorials](https://immcantation.readthedocs.io/en/stable/getting_started/10x_tutorial.html#assign-v-d-and-j-genes-using-igblast).
 
 ## Getting started
 
-We will be using a simulated dataset generated using [simble](https://github.com/hoehnlab/simble/tree/main#). You can download the data from [source]().
+We will be using a simulated dataset generated using [simble](https://github.com/hoehnlab/simble/tree/main#). You can find our example dataset in `data/all_samples_airr.tsv`. Additional files will be needed in the tutorial. The UCA inference steps require various model files and they can be found in [OLGA](https://github.com/statbiophys/OLGA/tree/master/olga/default_models). With TyCHE, template files are needed to run BEAST2 through Dowser. They can be found in `data/xml-templates` for this tutorial, but the most update to date templates can be found [here](https://github.com/hoehnlab/xml-templates).
 
+#### Install and load libraries and programs
+In this tutorial we will use various programs/languages. Below are instructions on how to install the various needed tools.
+#### Docker
+If you plan to use docker pull and use this container:
+```bash
+docker pull 28charger/tyche-dowser:latest
+docker run -it -v /path/to/your/data:/data 28charger/tyche-dowser:latest
+```
 
-#### Install and load libraries
+#### Dowser
+Dowser is an R package with various dependencies. Below are instructions on how get Dowser to install locally.
 
-Note that you might need to install several Bioconductor packages that are dependencies.
+Dowser has various Bioconductor dependencies that don't always install without specifying them.
 ```r
-# Biocondutor dependencies first
+# This will check if the package is installed and install it if not
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-biopackages <- c("ggtree", "Biostrings", "GenomicAlignments", "IRanges", "pwalgin")
+biopackages <- c('ggtree', 'treeio', 'pwalign', 'Biostrings', 'GenomicAlignments',
+                  'IRanges', 'S4Arrays', 'Rsamtools', 'SparseArray', 'DelayedArray',
+                  'SummarizedExperiment')
 new_biopackages <- biopackages[!(biopackages %in% installed.packages())]
 if (length(new_biopackages)) {BiocManager::install(new_biopackages)}
 ```
 
+Now Dowser should install normally.
 ```r
-# now the CRAN dependencies
-packages <- c("airr", "alakazam", "data.table", "dowser", "dplyr", "ggplot2",
-              "scoper")
-new_pkg <- packages[!(packages %in% installed.packages())]
-if (length(new_pkg)) {install.packages(new_pkg, dependencies = TRUE)}
+install.packages('dowser')
+```
+#### IgPhyML
+We will be making trees using IgPhyML, a B cell specific lineage tree model.
 
-# call the packages
-packages <- append(packages, biopackages)
-for (n in seq_along(packages)) {
-  suppressPackageStartupMessages(library(packages[n], character.only = TRUE))
-  cat(paste0(packages[n], ": ", packageVersion(packages[n]), "\n")) # print simplified package versions
-}
-rm(biopackages, new_biopackages, packages, new_pkg, n)
+##### Compiling from source on Linux
+```bash
+apt-get install automake autoconf libblas-dev liblapack-dev libatlas-base-dev
+git clone https://github.com/immcantation/igphyml
+cd igphyml
+./make_phyml_omp
+```
+##### Compiling from source on Mac
+This is a bit more tricky. [Please see instructions here](https://igphyml.readthedocs.io/en/latest/install.html)
+
+##### Compiling from source on Windows
+This is not available.
+
+#### Python
+First, make sure that Python is installed and accessible from the command line:
+```bash
+python3 --version
 ```
 
-For the UCA portion of this tutorial will also need a few python packages installed.
+On some systems, the command may be `python` instead of `python3`:
 ```bash
-# run this code in a command terminal, not an R terminal
+python --version
+```
+
+Next, install the required Python packages.
+```bash
 pip install biopython logomaker matplotlib numpy olga pandas scipy
 ```
 
-It is worth noting that sometimes the Python version you install these packages to is not the same as what R will call. Please double-check the Python executable. If you are using a virtual environment, it is possible that you have installed the packages in Python, pointed to the right executable, and still end up with an error due to the Python package not being installed. To check if the packages are installed and R can use them, you can run:
-```r
-# python3 might not be your call -- it could just be called python
-system2("python3", args = c("-m", "pip", "install", "missing package name", "missing package name 2"))
-```
-
-#### Read in the data
-```r
-library(dowser)
-data <- airr::read_rearrangement(".../all_samples_airr.tsv")
-```
-
-## Data preprocessing
-
-In normal analysis you would need to a a few preprocessing steps that we will not include here such as clonal identification, cell id standardization, and removing cells that have multiple heavy chains. Information on how to do that can be found [here](https://immcantation.readthedocs.io/en/stable/getting_started/10x_tutorial.html) and [here](https://scoper.readthedocs.io/en/stable/vignettes/Scoper-Vignette/).
-
-## Build and visualize trees
-
-Steps:
-
-1.  Resolve Light Chains and Create Germlines
-2.  Format Clones
-3.  Tree building
-4.  Reconstruct intermediate sequences
-5.  Visualize trees
-
-### Resolving Light Chains
-
-If you have light chain data (like in our example case here) you will need to run `resolveLightChains` before running `formatClones`. In order for the trees to best use the addition of light chain information, we will need to assign `clone_subgroups`, which group cells within a clone based on the light chain V and J gene and assign a subgroup to each sequence.
-```r
-comb <- resolveLightChains(data, cell = "cell_id", nproc = 1)
-```
-
-### Create Germlines
-
-The goal is to reconstruct the sequence of the unmutated ancestor of each clone using a reference database of known alleles ([IMGT](http://www.imgt.org)), before building B cell lineage trees. Due to the challenging nature of accurately inferring the D region and the junction region for BCR sequences, this region is masked with `N`. Note that occasionally errors are thrown for some clones - this is typical and usually results in those clones being excluded.
-
-In the example below, we read in the IMGT germline references from our Docker container. If you're using a local installation, you can download the most up-to-date reference genome by cloning the Immcantation repository and running the script:
+Depending on your setup, you may need to use:
 ```bash
-# get the script
-wget https://github.com/immcantation/immcantation/tree/master/scripts
-# run the script
-bash fetch_imgtdb.sh
-# you can also copy the imgt folder from docker as well dir = "/usr/local/share/germlines/imgt/"
+python3 -m pip install biopython logomaker matplotlib numpy olga pandas scipy
 ```
 
-Now we can use those sequences are references when creating germlines for the data
+or
+```bash
+python -m pip install biopython logomaker matplotlib numpy olga pandas scipy
+```
+
+It is important to verify that the Python executable used by R is the same Python installation where these packages were installed. This is a common source of errors, especially when using virtual environments or multiple Python installations.
+
+To check which Python executable R is calling, in R run:
 ```r
-# read in IMGT data if downloaded on your own (above)
-references <- readIMGT(dir = "imgt/human/vdj")
-
-# reconstruct germlines
-comb <- createGermlines(comb, references, nproc = 1, clone = "clone_subgroup_id")
-glimpse(comb)
+system2("python3", "--version")
+system2("python3", "-c", "import sys; print(sys.executable)")
 ```
 
-### Format clones
+If your system uses `python` instead of `python3`, replace `python3` with `python` in the commands above.
 
-In the rearrangement table, each row corresponds to a sequence, and each column is information about that sequence. We will create a new data structure, where each row is a clonal cluster, and each column is information about that clonal cluster. The function `formatClones` performs this processing and has options that are relevant to determine how the trees can be built and visualized. For example, `traits` determines the columns from the rearrangement data that will be included in the `clones` object, and will also be used to determine the uniqueness of the sequences, so they are not collapsed. To create H+L trees, specify `chain = "HL"`.
+You can also test whether the required packages are available from within R:
 ```r
-clones <- formatClones(comb, chain = "HL", nproc = 1, split_light = TRUE, traits = "sample_time")
+system2("python3", args = c(
+  "-c", shQuote('import Bio, logomaker, matplotlib, numpy, olga, pandas, scipy; print("All required Python packages are installed and accessible.")')))
 ```
 
-### Build trees
+If this command runs without errors, then R is using a Python installation with all required packages available.
 
-Dowser offers multiple ways to build B cell phylogenetic trees. These differ by the method used to estimate tree topology and branch lengths (e.g. maximum parsimony and maximum likelihood) and implementation (IgPhyML, PHYLIP, RAxML, or R packages `ape` and `phangorn`). For all construction methods other than `phangorn's` 'pratchet' and 'pml' methods, you will need to download and compile an executable and use the `exec` call in getTrees to point to that executable.
-
-For multi-partitioned trees, you need to specify that you want the construction to partition by chain type. The two methods that are currently supported do so differently. For `IgPhyML` include `partition = "hl"` in the getTrees call. For RAxML include `partition = "scaled"` in the getTrees call.
-
-Each of these methods now supports building trees with both heavy and light chains. IgPhyML and RAxML also support multi-paritioned tree construction, paritioning on the heavy and light chain sequences seperately.
+If you do find you are missing a package, you can install it through R using this command:
 ```r
-trees <- getTrees(clones, build = "igphyml", nproc = 1, exec = exec, partition = "hl")
+system2("python3", args = c("-m", "pip", "install", "missing package name"))
 ```
 
-### Reconstruct intermediate sequences
+#### BEAST2 and TyCHE
 
-Sequences of intermediate nodes are automatically reconstructed during the tree build process. To retrieve them, first plot the node numbers for each node. The function `collapseNodes` can help clean up the tree plots.
+##### On Mac and Windows machines, we recommend:
+1. Download the appropriate version from www.beast2.org
+2. Open BEAUti, click on the “File” menu, and select “Manage Packages…”.
+3. In the package manager, find and install the “BEAST Classic” package.
+4. Follow this [tutorial to add the “extra packages” package repository](www.beast2.org/managing-packages). Use https://github.com/CompEvol/CBAN/blob/master/packages-extra-2.7.xml as the package repository URL.
+5. In the package manager, find and install the “TyCHE” package. This tutorial relies on version v0.0.10 or later.
+6. In the package manager, find and install the “rootfreqs” package.
 
-Get the predicted intermediate sequence at an internal node in the second largest tree (dots represent IMGT gaps):
-```r
-trees <- collapseNodes(trees)
+##### For Linux machines, we recommend running:
+```bash
+# Choose appropriate version for your architecture (x86 or aarch64)
+BEAST=BEAST.v2.7.7.Linux.x86.tgz # or BEAST=BEAST.v2.7.7.Linux.aarch64.tgz
 
-trees <- scaleBranches(trees)
-plots_all <- plotTrees(trees, node_nums = TRUE, labelsize = 6, scale = 5)[[2]] +
-               geom_tippoint(aes(# simble stuff )) +
-               geom_tiplab(aes(label = simble stuff), offset = 0.002)
+# download file and uncompress
+curl -O https://github.com/CompEvol/beast2/releases/download/v2.7.7/$BEAST
+tar -xvzf $BEAST
 
-print(plots_all)
+# optionally remove the compressed file
+rm $BEAST
+
+# run BEAST, at least with help, to allow it to set up its directories
+~/beast/bin/beast -help
+
+# install BEAST Classic package
+~/beast/bin/packagemanager -add BEAST_CLASSIC
+
+# add "extra packages" package repo
+echo "packages.url=https\://raw.githubusercontent.com/CompEvol/CBAN/master/packages-extra-2.7.xml" >> ~/.beast/2.7/beauti.properties
+
+# install TyCHE package
+~/beast/bin/packagemanager -add TyCHE
+
+# install rootfreqs package
+~/beast/bin/packagemanager -add rootfreqs
 ```
-
-```r
-# get sequence at node 20 for the first clone_id in the trees
-getNodeSeq(trees, clone = trees$clone_id[1], node = 20)
-```
-
-### Visualize trees
-
-Regardless of how you build trees, they are visualized in the same manner with the `plotTrees` function. This will return a list of `ggplot` objects in the same order as the input object. Here, we color the tips by the `sample_time` value because we specified that column in the `formatClones` step.
-
-Plot all of the trees:
-```r
-plots_all <- plotTrees(trees, tips = "sample_time")
-plots_all[[1]]
-```
-
-You can directly save the tree plots to PDFs using `treesToPDF`.
-```r
-treesToPDF(plots_all, "file_path")
-```
-
-## UCA Inference
-
-The unmuated common ancestor (UCA) is the full length inferred naive BCR sequence. Dowser now supports this inference for both single and paired chain analysis. Dowser uses a combination of tree-based statistics and VDJ combination probabiliates provided by OLGA. As part of this, you will need to provide OLGA generation probabilites (either the [default models](https://github.com/statbiophys/OLGA/tree/master/olga/default_models) or create your own). This process also currently only uses [IgPhyML](https://igphyml.readthedocs.io/en/latest/). [IgPhyML compiling information](https://igphyml.readthedocs.io/en/latest/install.html) can be found here.
-```r
-clones_UCA <- getTreesAndUCAs(clones = clones[1,], data = comb,
-                               references = references,
-                               exec = "igphyml/src/igphyml",
-                               model_folder = "../default_models/human_B_heavy",
-                               model_folder_igk = "../default_models/human_B_kappa",
-                               model_folder_igl = "../default_models/human_B_lambda",
-                               nproc = 1, chain = "HL",
-                               partition = "hl", split_light = TRUE)
-```
-
-The output of `getTreesAndUCAs` is the same as the `getTrees` as well an a new column called `UCA`. `UCA` is a named list with the inferred ucas for each locus in nucleotides and amino acids as well as the IMGT gapped and ungapped versions of the UCA.
-```r
-clones_UCA$UCA[[1]]
-```
-
-## TyCHE
