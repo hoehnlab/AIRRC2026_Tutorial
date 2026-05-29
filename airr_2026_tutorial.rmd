@@ -31,7 +31,7 @@ We will be using a simulated dataset generated using [simble](https://github.com
 
 ```{r, warning=FALSE}
 library(dowser)
-data <- airr::read_rearrangement(".../all_samples_airr.tsv")
+data <- airr::read_rearrangement("data/all_samples_airr.tsv")
 data$v_germline_length <- as.numeric(data$v_germline_length)
 data$d_germline_length <- as.numeric(data$d_germline_length)
 data$j_germline_length <- as.numeric(data$j_germline_length)
@@ -65,7 +65,6 @@ The goal is to reconstruct the sequence of the unmutated ancestor of each clone 
 Now we can use those sequences are references when creating germlines for the data
 ```{r, warning=FALSE, message=FALSE}
 references <- readIMGT(dir = "data/imgt/human/vdj")
-
 comb <- createGermlines(comb, references, nproc = 1, clone = "clone_subgroup_id")
 ```
 
@@ -117,7 +116,7 @@ treesToPDF(plots_all, "file_path")
 
 ## UCA Inference
 
-The unmuated common ancestor (UCA) is the full length inferred naive BCR sequence. Dowser now supports this inference for both single and paired chain analysis. Dowser uses a combination of tree-based statistics and VDJ combination probabiliates provided by OLGA. As part of this, you will need to provide OLGA generation probabilites (either the [default models](https://github.com/statbiophys/OLGA/tree/master/olga/default_models) or create your own). This process also currently only uses [IgPhyML](https://igphyml.readthedocs.io/en/latest/). [IgPhyML compiling information](https://igphyml.readthedocs.io/en/latest/install.html) can be found here. 
+The unmuated common ancestor (UCA) is the full length inferred naive BCR sequence. Dowser now supports this inference for both single and paired chain analysis. Dowser uses a combination of tree-based statistics and VDJ combination probabilities provided by OLGA. As part of this, you will need to provide OLGA generation probabilities (either the [default models](https://github.com/statbiophys/OLGA/tree/master/olga/default_models) or create your own). This process also currently only uses [IgPhyML](https://igphyml.readthedocs.io/en/latest/). [IgPhyML compiling information](https://igphyml.readthedocs.io/en/latest/install.html) can be found here. 
 ```{r, warning=FALSE}
 clones_UCA <- getTreesAndUCAs(clones = clones, data = comb,
                                references = references,
@@ -129,7 +128,7 @@ clones_UCA <- getTreesAndUCAs(clones = clones, data = comb,
                                partition = "hl", split_light = TRUE)
 ```
 
-The output of `getTreesAndUCAs` is the same as the `getTrees` as well an a new column called `UCA`. `UCA` is a named list with the inferred ucas for each locus in nucleotides and amino acids as well as the IMGT gapped and ungapped versions of the UCA. 
+The output of `getTreesAndUCAs` is the same as the `getTrees` as well an a new column called `UCA`. `UCA` is a named list with the inferred UCAs for each locus in nucleotides and amino acids as well as the IMGT gapped and ungapped versions of the UCA. 
 ```{r}
 clones_UCA$UCA[[1]]
 ```
