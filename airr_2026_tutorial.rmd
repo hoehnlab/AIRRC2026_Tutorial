@@ -141,14 +141,9 @@ clones_UCA$UCA[[1]]
 ## Questions?
 
 
-## Building Time Trees 
+Time-resolved trees are trees where the branch lengths represent time instead of the number of mutations. This can be useful for understanding the timing of events in B cell evolution. BEAST2 is a popular tool for building time-resolved trees, and Dowser offers integration so you can run BEAST2 directly from R.
 
-Time-resolved trees are trees where the branch lengths represent time instead of the number of mutations. This can be useful for understanding the timing of events in B cell evolution. BEAST2 is a popular tool for building time-resolved trees, and 
-Dowser offers integration so you can run BEAST2 directly from R. 
-
-BEAST2 is an ecosystem, and there are many packages that can be useful for 
-different analyses. For B cell analyses, the TyCHE and rootfreqs packages will
-allow us to specify a germline sequence and use a clock model that accounts for the heterogeneous rates of evolution across B cell subtypes. 
+BEAST2 is an ecosystem, and there are many packages that can be useful for different analyses. For B cell analyses, the TyCHE and rootfreqs packages will allow us to specify a germline sequence and use a clock model that accounts for the heterogeneous rates of evolution across B cell subtypes.
 
 BEAST2 is an ecosystem, and there are many packages that can be useful for different analyses. For B cell analyses, the TyCHE and rootfreqs packages will allow us to specify a germline sequence and use a clock model that accounts for the heterogenous rates of evolution across B cell subtypes.
 
@@ -177,17 +172,19 @@ Steps:
 
 For this analysis, we will be using the same data as before, but we will need to filter it to include only the heavy chains. The column containing the timepoint information needs to be numeric, so we convert that too.
 
-TODO: add section discussing trait. 
+In order to use a type-linked model, we need to specify which column in our data contains the type that we wish to associate with different clock rates. TyCHE's standard model supports a two-type case, so we use GC and non-GC B cells as our two types. In this case, we have a "location" column in our data that specifies whether a B cell is from the germinal center or from another tissue, so we use that as our type.
+
+We need to make sure that this column is kept as a trait when we format the clones, so we include it in the `traits` argument of `formatClones`. We also need to include the time information as a trait, so we include that as well.
 
 ```{r, warning=FALSE}
 heavy <- filter(data, locus == "IGH")
 heavy$sample_time <- as.numeric(heavy$sample_time)
 
-trait <- "location" # this is the column in your data that contains the trait that you want to use for the TyCHE model, in this case it is whether the B cell is from the germinal center or from another tissue
+type <- "location" # the column that contains the type information for the TyCHE model, in this example, whether the B cell is from the germinal center or from another tissue
 
 tyche_clones <- formatClones(
   heavy,
-  traits = c(trait, "sample_time"),
+  traits = c(type, "sample_time"),
   germ   = "germline_alignment"
 )
 ```
@@ -213,7 +210,8 @@ plotTrees(gctrees)[[1]] + geom_tippoint(aes(color=sample_time))
 
 The next step takes about 5 minutes to run, depending on your machine, as a quick demonstration. Expect results to be unconverged. To get more reliable results, set larger `mcmc_length` or `iterations`.
 
-`getTimeTreesIterate` will run BEAST2 on each clone in parallel (here, `nproc=1`, so 1 clone at a time, since we only have one!). 
+`getTimeTreesIterate` will run BEAST2 on each clone in parallel (here, `nproc=1`, so 1 clone at a time, since we only have one!).
+
 ```{r, eval=FALSE}
 # estimate clock rate of GC B cells
 # if you don't care about convergence, reduce mcmc_length
@@ -241,8 +239,9 @@ The effective sample size (ESS) of a parameter is a measure of how much independ
 A higher ESS means your sample more reliably represents the posterior distribution. Low ESS indicates that you need more information, which can indicate the need for longer MCMC runs. We typically recommend an ESS of at least 200 for each estimated parameter.
 
 We can use results we ran ahead of time to look at the difference in outputs.
+
 ```{r, eval=FALSE}
-gctree_converged <- readRDS("gctree_converged.RDS")
+gctree_converged <- readRDS("data/gctree_converged.RDS")
 print(gctree$parameters[[1]] %>% filter(item=="geneticClockRate"))
 print(gctree_converged$parameters[[1]] %>% filter(item=="geneticClockRate"))
 ```
@@ -250,12 +249,14 @@ print(gctree_converged$parameters[[1]] %>% filter(item=="geneticClockRate"))
 While the mean clock rate happens to be similar between the unconverged and converged analyses, the ESS of the clock rate parameter is much higher in the converged analysis, so we can be more confident in that estimate.
 
 To get the mean clock rate across the trees, we can filter the parameters table for `geneticClockRate` and take the mean of the `mean` column. This will give us an estimate of the clock rate for GC B cells that we can use in our TyCHE model.
+
 ```{r, eval=FALSE}
 gcrate_tree = mean(sapply(gctree_converged$parameters, function(x)filter(x,item=="geneticClockRate")$mean))
 print(gcrate_tree)
 ```
 
 If it is not feasible to run a strict clock analysis, you can use the slope from a root-to-tip regression. Here, we estimate the clock rate of germinal center B cells using a root-to-tip regression.
+
 ```{r, eval=FALSE}
 gcrate_slope = mean(correlationTest(gctrees, time="sample_time")$slope)
 print(gcrate_slope)
@@ -268,7 +269,7 @@ We can now run a type-linked TyCHE model using the estimated GC rate. Here, we u
 Features of this template:
 
 -   Allows estimation of clock rates:
-    -   we provide values of the mean (`TRAIT_RATE_MEAN_1`, `TRAIT_RATE_MEAN_2`) and sigma (`TRAIT_RATE_SIGMA_1`, `TRAIT_RATE_SIGMA_2`) for the prior lognormal distributions of each clock rate.
+    -   we provide values of the mean (`TRAIT_RATE_MEAN_1`, `TRAIT_RATE_MEAN_2`) and standard deviation (`TRAIT_RATE_SIGMA_1`, `TRAIT_RATE_SIGMA_2`) for the prior normal distributions of each clock rate.
 -   Uses empirical nucleotide frequencies as the equilibrium frequencies.
     -   Dowser will automatically calculate these frequencies from the input sequences.
     -   Recommended for most data, especially BCRs.
@@ -330,6 +331,7 @@ You can monitor the progress of BEAST2 runs using tools like Tracer and FigTree.
 After the analyses have converged, you can visualize the time trees.
 
 Since the analysis above takes some time to run, we will load in the results from a previous run for the rest of this tutorial.
+
 ```{r load-mixed-trees, echo=FALSE}
 mixed_trees <- readRDS("data/mixed_trees.RDS")
 ```
@@ -349,6 +351,7 @@ A higher ESS means your sample more reliably represents the posterior distributi
 The autocorrelation time (ACT) of a parameter measures how strongly each sample in the MCMC chain depends on previous samples. The ACT tells you how long the MCMC chain takes to produce a roughly independent sample. ACT is inversely related to ESS.
 
 If we're interested in the estimated tree height, we can filter the parameters table for `TreeHeight`:
+
 ```{r tree-height-parameter}
 print(mixed_trees$parameters[[1]] %>% filter(item=="TreeHeight"))
 ```
@@ -356,6 +359,7 @@ print(mixed_trees$parameters[[1]] %>% filter(item=="TreeHeight"))
 Our model likely hasn't converged, with multiple parameters having ESS values below 200, particularly the posterior which describes how well the model has converged as a whole. The mean tree height is around 236 time units, with a 95% highest posterior density interval from about 200 to 275 time units. Since we know the data spans 200 time units, this is a high estimate, but this is unsurprising given that the ESS is below 200 and the analysis has likely not converged.
 
 The parameters available will depend on the model you used and what is specified for logging in the XML template. In this case, we can see all the items that were logged:
+
 ```{r logged-parameters}
 print(mixed_trees$parameters[[1]]$item)
 ```
