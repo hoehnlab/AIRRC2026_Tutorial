@@ -31,6 +31,8 @@ We will be using a simulated dataset generated using [simble](https://github.com
 
 ```{r, warning=FALSE}
 library(dowser)
+library(dplyr)
+library(ggtree)
 data <- airr::read_rearrangement("data/all_samples_airr.tsv")
 data$v_germline_length <- as.numeric(data$v_germline_length)
 data$d_germline_length <- as.numeric(data$d_germline_length)
@@ -48,8 +50,8 @@ Steps:
 1.  Resolve Light Chains and Create Germlines
 2.  Format Clones
 3.  Tree building
-4.  Reconstruct intermediate sequences
-5.  Visualize trees
+4.  Visualize trees
+5.  Reconstruct intermediate sequences
 
 ### Resolving Light Chains
 
@@ -81,7 +83,7 @@ Dowser offers multiple ways to build B cell phylogenetic trees. These differ by 
 
 For multi-partitioned trees, you need to specify that you want the construction to partition by chain type. The two methods that are currently supported do so differently. For `IgPhyML` include `partition = "hl"` in the getTrees call. For RAxML include `partition = "scaled"` in the getTrees call.
 
-Each of these methods now supports building trees with both heavy and light chains. IgPhyML and RAxML also support multi-paritioned tree construction, paritioning on the heavy and light chain sequences seperately. 
+Each of these methods now supports building trees with both heavy and light chains. IgPhyML and RAxML also support multi-partitioned tree construction, partitioning on the heavy and light chain sequences separately. 
 ```{r, warning=FALSE}
 exec <- "/programs/igphyml/src/igphyml"
 trees <- getTrees(clones, build = "igphyml", nproc = 1, exec = exec, partition = "hl")
@@ -189,7 +191,7 @@ models perform best when there is prior information about the rate of one
 or both populations. 
 
 If you do not have an external estimate of the clock rate for each trait, you can estimate
-the clock rate using a using root-to-tip regression or by fitting a strict clock 
+the clock rate using a using root-to-tip regression or by fitting a BEAST2 strict clock 
 model to GC B cells. 
 
 Here we estimate the clock rate of germinal center B cells using BEAST2 with a strict clock model.
@@ -204,13 +206,8 @@ gctrees = getTrees(gcf, build="pml", sub_model="HKY")
 plotTrees(gctrees)[[1]] + geom_tippoint(aes(color=sample_time))
 ```
 
-
-<div class="admonition-announcement tip">
-  <p class="admonition-title">Tip</p>
-  The next step takes about 5 minutes to run, depending on your machine, as a
-  quick demonstration. Expect results to be unconverged. To get more reliable results, set larger `mcmc_length` or `iterations`.
-      <br><br>
-</div>
+The next step takes about 5 minutes to run, depending on your machine, as a
+quick demonstration. Expect results to be unconverged. To get more reliable results, set larger `mcmc_length` or `iterations`.
 
 `getTimeTreesIterate` will run BEAST2 on each clone in parallel 
 (here, `nproc=1`, so 1 clone at a time, since we only have one!). 
@@ -247,7 +244,7 @@ is a fixed value).
 We can use results we ran ahead of time to look at the difference in outputs.
 
 ```{r, eval=FALSE}
-gctree_converged <- readRDS(gctree_converged)
+gctree_converged <- readRDS("gctree_converged.RDS")
 print(gctree$parameters[[1]] %>% filter(item=="geneticClockRate"))
 print(gctree_converged$parameters[[1]] %>% filter(item=="geneticClockRate"))
 ```
@@ -287,20 +284,15 @@ for the prior normal distributions of each clock rate.
   - Recommended for most data, especially BCRs.
 
 
-<div class="admonition-announcement tip">
-  <p class="admonition-title">Tip</p>
-      This step takes about 30 minutes to run, depending on your machine. 
-      For a quick demonstration set smaller `mcmc_length` or `iterations`, but expect
-      results to be unconverged.
-      <br><br>
-</div>
+The next step takes about 10 minutes to run, depending on your machine, as a
+quick demonstration. Expect results to be unconverged. To get more reliable results, set larger `mcmc_length` or `iterations`.
 
 ```{r, eval=FALSE}
 mixed_trees <- getTimeTreesIterate(
   tyche_clones,
   beast    = beast,
   template = tyche_template,
-  trait    = trait,
+  trait    = trait, # this should be just one trait 
   time     = "sample_time",
   dir      = "tyche_estimation",
   id       = "tyche_tutorial",
@@ -325,7 +317,7 @@ mixed_trees <- getTimeTreesIterate(
   log_target   = 2000,
   mcmc_length  = 1e6,
   ignore       = c("freqParameter"),
-  iterations   = 20
+  iterations   = 10
 )
 ```
 
@@ -365,18 +357,18 @@ After the analyses have converged, you can visualize the time trees.
 Since the analysis above takes some time to run, we will load in the results from a previous run for the rest of this tutorial.
 
 ```{r load-mixed-trees, echo=FALSE}
-mixed_trees <- readRDS("mixed_trees.rds")
+mixed_trees <- readRDS("mixed_trees.RDS")
 ```
 
 Note: plotTrees sets a default value for the scale bar of 0.01, which is appropriate 
 for trees with genetic distance branch lengths (mutations per site), but time trees typically 
-require a larger scale bar. In this case, we know the data spans 200 time units,
-so we set `scale=10` to make the scale bar more visually interpretable.
+require a larger scale bar. In this case, we know the data spans 100 days,
+so we set `scale=100` to make the scale bar more visually interpretable.
 
-```{r plot-mixed-trees-result, eval=FALSE}
-plotTrees(mixed_trees, scale=10)[[1]] + geom_point(aes(fill=location), pch=21, size=3)
+```{r plot-mixed-trees-result}
+plotTrees(mixed_trees, scale=100)[[1]] + geom_point(aes(fill=location), pch=21, size=3)
 ```
-![](Building-Time-Trees-mixed-trees.png)
+
 
 The `parameters` column of `mixed_trees` contains a table that collates the output from the BEAST2 analysis. Columns include the parameter (item), the posterior mean, standard error, standard deviation, median, 95% highest posterior density interval, autocorrelation time (ACT), effective sample size, and geometric mean.
 
