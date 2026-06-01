@@ -87,10 +87,11 @@ new_biopackages <- biopackages[!(biopackages %in% installed.packages())]
 if (length(new_biopackages)) {BiocManager::install(new_biopackages)}
 ```
 
-Now Dowser should install normally.
+Now the latest version of Fowser can be installed from Github using the devtools package.
 ```r
-install.packages('dowser')
+devtools::install_github("immcantation/dowser")
 ```
+
 #### IgPhyML
 We will be making trees using IgPhyML, a B cell specific lineage tree model.
 
