@@ -152,12 +152,12 @@ allow us to specify a germline sequence and use a clock model that accounts for 
 
 #### Set up for BEAST2
 
-To run BEAST2 with Dowser, you will need to specify the path to the BEAST2 executable and the path to the XML template that you want to use. The XML template will specify the model and priors that you want to use for your analysis. Default templates are available at github.com/hoehnlab/xml-templates, but you can also create your own if you want to specify different models or priors.
+To run BEAST2 with Dowser, you will need to specify the path to the BEAST2 executable and the path to the XML template that you want to use. The XML template will specify the model and priors that you want to use for your analysis. The current default templates are available on this repo but the most up-to-date templates will be found at github.com/hoehnlab/xml-templates. You can also create your own if you want to specify different models or priors.
 
 ```{r}
 beast <- "/opt/beast/bin/beast"
-strict_template <- "data/xml-templates/template.xml"
-tyche_template <- "data/xml-templates/template.xml"
+strict_template <- "data/xml-templates/StrictClock_Standard.xml"
+tyche_template <- "data/xml-templates/TypeLinkedExpectedOccupancy_FixedTraitClockRates.xml"
 ```
 
 Steps:
@@ -186,14 +186,9 @@ tyche_clones <- formatClones(
 
 ## Estimating the GC clock rate
 
-The type-linked clock models implemented in TyCHE link each trait to a separate 
-molecular clock rate which can be either fixed or estimated as a parameter. The
-models perform best when there is prior information about the rate of one 
-or both populations. 
+The type-linked clock models implemented in TyCHE link each trait to a separate molecular clock rate which can be either fixed or estimated as a parameter. The models perform best when there is prior information about the rate of one or both populations. 
 
-If you do not have an external estimate of the clock rate for each trait, you can estimate
-the clock rate using a using root-to-tip regression or by fitting a BEAST2 strict clock 
-model to GC B cells. 
+If you do not have an external estimate of the clock rate for each trait, you can estimate the clock rate using a using root-to-tip regression or by fitting a BEAST2 strict clock model to GC B cells. 
 
 Here we estimate the clock rate of germinal center B cells using BEAST2 with a strict clock model.
 ```{r estimate-gc-clock-rate, eval=FALSE}
@@ -322,7 +317,7 @@ After the analyses have converged, you can visualize the time trees.
 
 Since the analysis above takes some time to run, we will load in the results from a previous run for the rest of this tutorial.
 ```{r load-mixed-trees, echo=FALSE}
-mixed_trees <- readRDS("mixed_trees.RDS")
+mixed_trees <- readRDS("data/mixed_trees.RDS")
 ```
 
 Note: plotTrees sets a default value for the scale bar of 0.01, which is appropriate for trees with genetic distance branch lengths (mutations per site), but time trees typically require a larger scale bar. In this case, we know the data spans 200 time units, so we set `scale=10` to make the scale bar more visually interpretable.
