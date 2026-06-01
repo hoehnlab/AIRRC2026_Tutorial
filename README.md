@@ -167,12 +167,32 @@ system2("python3", args = c("-m", "pip", "install", "missing package name"))
 #### BEAST2 and TyCHE
 
 ##### On Mac and Windows machines, we recommend:
-1. Download the appropriate version from www.beast2.org
+1. Download the appropriate version for your device from [the v2.7.7 release](https://github.com/CompEvol/beast2/releases/tag/v2.7.7)
 2. Open BEAUti, click on the “File” menu, and select “Manage Packages…”.
 3. In the package manager, find and install the “BEAST Classic” package.
 4. Follow this [tutorial to add the “extra packages” package repository](www.beast2.org/managing-packages). Use https://github.com/CompEvol/CBAN/blob/master/packages-extra-2.7.xml as the package repository URL.
 5. In the package manager, find and install the “TyCHE” package. This tutorial relies on version v0.0.10 or later.
 6. In the package manager, find and install the “rootfreqs” package.
+
+If using BEAUti's graphical interface for the package manager does not work, these 
+alternative steps work on Mac:
+```bash
+# alterative for step 3, install BEAST Classic
+/Applications/BEAST\ 2.7.7/bin/packagemanager -add BEAST_CLASSIC
+
+# alternative for step 4, add "extra packages" package repo
+# first confirm that this is the correct path for your beauti.properties file
+ls ~/Library/Application\ Support/BEAST/2.7/beauti.properties
+# add the extra packages repo 
+echo "packages.url=https\://raw.githubusercontent.com/CompEvol/CBAN/master/packages-extra-2.7.xml" >> ~/Library/Application\ Support/BEAST/2.7/beauti.properties
+
+# alterative for steps 5 and 6
+# install TyCHE package
+/Applications/BEAST\ 2.7.7/bin/packagemanager -add TyCHE
+
+# install rootfreqs package
+/Applications/BEAST\ 2.7.7/bin/packagemanager -add rootfreqs
+```
 
 ##### For Linux machines, we recommend running:
 ```bash
