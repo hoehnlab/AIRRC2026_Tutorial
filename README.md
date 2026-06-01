@@ -12,7 +12,8 @@ We will be using a simulated dataset generated using [simble](https://github.com
 
 #### Install and load libraries and programs
 In this tutorial we will use various programs/languages. Below are instructions on how to install the various needed tools.
-#### Docker
+
+### Option 1: Docker
 If you plan to use docker pull and use this container:
 ```bash
 docker pull colejensen/tyche-dowser:latest
@@ -20,6 +21,8 @@ docker run -it -p 8787:8787 colejensen/tyche-dowser:latest
 docker run -d -p 8787:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
 Then go to http://localhost:8787 in your browser and follow along! The username and password are rstudio. The tutorial can be found in /data.
+
+### Option 2: Local installation
 
 #### Dowser
 Dowser is an R package with various dependencies. Below are instructions on how get Dowser to install locally.
