@@ -140,6 +140,7 @@ clones_UCA$UCA[[1]]
 
 ## Questions?
 
+## Building Time Trees
 
 Time-resolved trees are trees where the branch lengths represent time instead of the number of mutations. This can be useful for understanding the timing of events in B cell evolution. BEAST2 is a popular tool for building time-resolved trees, and Dowser offers integration so you can run BEAST2 directly from R.
 
@@ -339,9 +340,25 @@ mixed_trees <- readRDS("data/mixed_trees.RDS")
 Note: plotTrees sets a default value for the scale bar of 0.01, which is appropriate for trees with genetic distance branch lengths (mutations per site), but time trees typically require a larger scale bar. In this case, we know the data spans 100 days, so we set `scale=100` to make the scale bar more visually interpretable.
 
 ```{r plot-mixed-trees-result}
-plotTrees(mixed_trees, scale=100)[[1]] + geom_point(aes(fill=location), pch=21, size=3)
+plotTrees(mixed_trees, scale=100, nodes=TRUE, tips="location")[[1]] + geom_point(aes(fill=location), pch=21, size=3)
 ```
+If we want to visualize how much of each branch is estimated in each state, we can plot the "expected occupancy" of each branch. This shows how
+much time TyCHE estimates each branch spends in the GC. The expected occupancy is a value between 0 and 1, so we can use a gradient color scale to visualize it.
 
+```{r plot-mixed-trees-eo}
+colors = RColorBrewer::brewer.pal(3,"Set1")
+names(colors) = c("GC", "Other", "Ambig.")
+eo_line_color_scale <- scale_color_gradient(
+    low = colors["Other"],
+    high = colors["GC"],
+    breaks = c(0, 0.25, 0.5, 0.75, 1),
+    limits = c(0, 1)
+)
+
+ggtree(mixed_trees$trees[[1]], aes(color = as.numeric(expectedOccupancies)),linewidth = 0.75) +
+  geom_point(aes(fill = location), pch = 21, size = 3, color = "black") +
+  eo_line_color_scale
+```
 The `parameters` column of `mixed_trees` contains a table that collates the output from the BEAST2 analysis. Columns include the parameter (item), the posterior mean, standard error, standard deviation, median, 95% highest posterior density interval, autocorrelation time (ACT), effective sample size, and geometric mean.
 
 The effective sample size (ESS) of a parameter is a measure of how much independent information your MCMC sample contains. Even though MCMC generates many samples, they are typically autocorrelated—each sample depends on the previous one. ESS is the number of independent draws from the target distribution with the same estimation power and can be thought of as the sample size for that parameter.
