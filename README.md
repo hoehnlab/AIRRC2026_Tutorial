@@ -87,7 +87,7 @@ new_biopackages <- biopackages[!(biopackages %in% installed.packages())]
 if (length(new_biopackages)) {BiocManager::install(new_biopackages)}
 ```
 
-Now the latest version of Fowser can be installed from Github using the devtools package.
+Now the latest version of Dowser can be installed from Github using the devtools package.
 ```r
 devtools::install_github("immcantation/dowser")
 ```
