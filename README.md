@@ -14,14 +14,61 @@ We will be using a simulated dataset generated using [simble](https://github.com
 In this tutorial we will use various programs/languages. Below are instructions on how to install the various needed tools.
 
 ### Option 1: Docker
-If you plan to use docker pull and use this container:
+Pull and run the container:
 ```bash
 docker pull colejensen/tyche-dowser:latest
-docker run -it -p 8787:8787 colejensen/tyche-dowser:latest
-docker run -d -p 8787:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
-Then go to http://localhost:8787 in your browser and follow along! The username and password are rstudio. The tutorial can be found in /data.
+Then go to http://localhost:8788 in your browser and follow along! The username and password are `rstudio`. The tutorial can be found in `/data`.
 
+#### Troubleshooting
+Depending on your setup, you may run into some problems launching the container. Below are troubleshooting tips based on your system.
+
+##### Linux
+```bash
+# Check what's on 8788
+sudo ss -tlnp | grep 8788
+
+# If it's a running container
+sudo docker ps
+sudo docker stop <container_id>
+
+# If it's native RStudio Server
+sudo systemctl stop rstudio-server
+
+# If you get a permission error, add your user to the docker group
+# (then log out and back in)
+sudo usermod -aG docker $USER
+
+# Then start your container
+sudo docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
+##### Mac
+```bash
+# Check what's on 8788
+lsof -i :8788
+
+# If it's a running container
+docker ps
+docker stop <container_id>
+
+# Then start your container
+docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
+##### Windows
+```powershell
+# Check what's on 8788
+netstat -ano | findstr :8788
+
+# If it's a running container
+docker ps
+docker stop <container_id>
+
+# Then start your container
+docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
 ### Option 2: Local installation
 
 #### Dowser
