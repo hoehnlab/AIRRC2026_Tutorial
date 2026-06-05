@@ -3,7 +3,7 @@ title: "Dowser Tutorial"
 output: html_document
 ---
 
-Tutorial outline: \* [Overview] \* [Getting started] \* [Define clonal groups] \* [Create germlines] \* [Build and visualize trees] \* [UCA] \* [TyCHE]
+Tutorial outline: \* [Overview] \* [Getting started] \* [Define clonal groups] \* [Create germlines] \* [Build and visualize trees] \* [UCA Inference] \* [Building Time Trees]
 
 ## Overview
 
@@ -115,7 +115,7 @@ treesToPDF(plots_all, "file_path")
 
 ## Statistical Tests
 
-Dowser supports a number of statistical tests to provide insights into your dataset. Some of these options are a [measurable evolution test](https://dowser.readthedocs.io/en/stable/vignettes/Measurable-Evolution/) and a [discrete traits analysis](https://dowser.readthedocs.io/en/stable/vignettes/Discrete-Trait-Vignette/. Guides on how to run these analyzes and more can be found on our [website](https://dowser.readthedocs.io/en/stable/). 
+Dowser supports a number of statistical tests to provide insights into your dataset. Some of these options are a [measurable evolution test](https://dowser.readthedocs.io/en/stable/vignettes/Measurable-Evolution/) and a [discrete traits analysis](<https://dowser.readthedocs.io/en/stable/vignettes/Discrete-Trait-Vignette/>. Guides on how to run these analyzes and more can be found on our [website](https://dowser.readthedocs.io/en/stable/).
 
 ## UCA Inference
 
@@ -156,9 +156,9 @@ To run BEAST2 with Dowser, you will need to specify the path to the BEAST2 execu
 # if on your local device, you'll want to change this to the path to the BEAST2 executable
 # linux default: "~/beast/bin/"
 # Mac default: "/Applications/BEAST\ 2.7.7/bin/"
-beast <- "/opt/beast/bin/beast"
-strict_template <- "data/xml-templates/StrictClock_Standard_EmpFreq.xml"
-tyche_template <- "data/xml-templates/TypeLinkedExpectedOccupancy_EstTraitClockRates_EmpFreq.xml"
+beast <- "/opt/beast/bin/"
+strict_template <- "data/xml-templates/StrictClock/StrictClock_Standard_EmpFreq.xml"
+tyche_template <- "data/xml-templates/TypeLinked/TypeLinkedExpectedOccupancy_EstTraitClockRates_EmpFreq.xml"
 ```
 
 Steps:
@@ -235,7 +235,7 @@ gctree = getTimeTreesIterate(gcf,
 
 The convergence check is based on the ESS of the parameters reported in the log files. You can exclude parameters from this ESS check using the `ignore` argument (here, we ignore `freqParameter`, as it is a fixed value).
 
-The effective sample size (ESS) of a parameter is a measure of how much independent information your MCMC sample contains. Even though MCMC generates many samples, they are typically autocorrelated—each sample depends on the previous one. ESS is the number of independent draws from the target distribution with the same estimation power and can be thought of as the sample size for that parameter.
+The effective sample size (ESS) of a parameter is a measure of how much independent information your MCMC sample contains. Even though MCMC generates many samples, they are typically autocorrelated---each sample depends on the previous one. ESS is the number of independent draws from the target distribution with the same estimation power and can be thought of as the sample size for that parameter.
 
 A higher ESS means your sample more reliably represents the posterior distribution. Low ESS indicates that you need more information, which can indicate the need for longer MCMC runs. We typically recommend an ESS of at least 200 for each estimated parameter.
 
@@ -342,8 +342,8 @@ Note: plotTrees sets a default value for the scale bar of 0.01, which is appropr
 ```{r plot-mixed-trees-result}
 plotTrees(mixed_trees, scale=100, nodes=TRUE, tips="location")[[1]] + geom_point(aes(fill=location), pch=21, size=3)
 ```
-If we want to visualize how much of each branch is estimated in each state, we can plot the "expected occupancy" of each branch. This shows how
-much time TyCHE estimates each branch spends in the GC. The expected occupancy is a value between 0 and 1, so we can use a gradient color scale to visualize it.
+
+If we want to visualize how much of each branch is estimated in each state, we can plot the "expected occupancy" of each branch. This shows how much time TyCHE estimates each branch spends in the GC. The expected occupancy is a value between 0 and 1, so we can use a gradient color scale to visualize it.
 
 ```{r plot-mixed-trees-eo}
 colors = RColorBrewer::brewer.pal(3,"Set1")
@@ -359,9 +359,10 @@ ggtree(mixed_trees$trees[[1]], aes(color = as.numeric(expectedOccupancies)),line
   geom_point(aes(fill = location), pch = 21, size = 3, color = "black") +
   eo_line_color_scale
 ```
+
 The `parameters` column of `mixed_trees` contains a table that collates the output from the BEAST2 analysis. Columns include the parameter (item), the posterior mean, standard error, standard deviation, median, 95% highest posterior density interval, autocorrelation time (ACT), effective sample size, and geometric mean.
 
-The effective sample size (ESS) of a parameter is a measure of how much independent information your MCMC sample contains. Even though MCMC generates many samples, they are typically autocorrelated—each sample depends on the previous one. ESS is the number of independent draws from the target distribution with the same estimation power and can be thought of as the sample size for that parameter.
+The effective sample size (ESS) of a parameter is a measure of how much independent information your MCMC sample contains. Even though MCMC generates many samples, they are typically autocorrelated---each sample depends on the previous one. ESS is the number of independent draws from the target distribution with the same estimation power and can be thought of as the sample size for that parameter.
 
 A higher ESS means your sample more reliably represents the posterior distribution. Low ESS indicates that you need more information, which can indicate the need for longer MCMC runs. We typically recommend an ESS of at least 200 for each estimated parameter.
 

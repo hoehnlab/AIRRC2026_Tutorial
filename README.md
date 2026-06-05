@@ -14,35 +14,60 @@ We will be using a simulated dataset generated using [simble](https://github.com
 In this tutorial we will use various programs/languages. Below are instructions on how to install the various needed tools.
 
 ### Option 1: Docker
-Pull and run the container:
+#### Mac (Apple Silicon & Intel)
+
+1. Download and install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
+2. Open Docker Desktop from your Applications folder and wait until the whale icon in the menu bar says **"Docker Desktop is running"**
+3. Open Terminal and run:
 ```bash
-docker pull colejensen/tyche-dowser:latest
-docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+   docker pull colejensen/tyche-dowser:latest
+   docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
-Then go to http://localhost:8788 in your browser and follow along! The username and password are `rstudio`. The tutorial can be found in `/data`.
+
+#### Windows
+
+1. Download and install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+   - Windows 10/11 with WSL2 is recommended. Docker Desktop will prompt you to install WSL2 if needed.
+2. Open Docker Desktop from the Start menu and wait until the whale icon in the system tray says **"Docker Desktop is running"**
+3. Open PowerShell or Command Prompt and run:
+```powershell
+   docker pull colejensen/tyche-dowser:latest
+   docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
+#### Linux
+
+1. Install Docker:
+```bash
+   curl -fsSL https://get.docker.com | sh
+   sudo systemctl start docker
+   sudo systemctl enable docker  # optional: start Docker automatically on boot
+```
+2. Add your user to the docker group so you can run Docker without `sudo` (log out and back in after):
+```bash
+   sudo usermod -aG docker $USER
+```
+3. Pull and run the image:
+```bash
+   docker pull colejensen/tyche-dowser:latest
+   docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
+#### All Systems — Open RStudio
+
+Once the container is running, open your browser and go to:
+
+**http://localhost:8788**
+
+Log in with:
+
+- **Username:** `rstudio`
+- **Password:** `rstudio`
+
+The tutorial `.Rmd` file and all required data will already be in your working directory.
 
 #### Troubleshooting
 Depending on your setup, you may run into some problems launching the container. Below are troubleshooting tips based on your system.
-
-##### Linux
-```bash
-# Check what's on 8788
-sudo ss -tlnp | grep 8788
-
-# If it's a running container
-sudo docker ps
-sudo docker stop <container_id>
-
-# If it's native RStudio Server
-sudo systemctl stop rstudio-server
-
-# If you get a permission error, add your user to the docker group
-# (then log out and back in)
-sudo usermod -aG docker $USER
-
-# Then start your container
-sudo docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
-```
 
 ##### Mac
 ```bash
@@ -69,6 +94,27 @@ docker stop <container_id>
 # Then start your container
 docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
+
+##### Linux
+```bash
+# Check what's on 8788
+sudo ss -tlnp | grep 8788
+
+# If it's a running container
+sudo docker ps
+sudo docker stop <container_id>
+
+# If it's native RStudio Server
+sudo systemctl stop rstudio-server
+
+# If you get a permission error, add your user to the docker group
+# (then log out and back in)
+sudo usermod -aG docker $USER
+
+# Then start your container
+sudo docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
 ### Option 2: Local installation
 
 #### Dowser
@@ -115,6 +161,28 @@ curl -O https://raw.githubusercontent.com/immcantation/immcantation/master/scrip
 chmod +x fetch_imgtdb.sh
 ./fetch_imgtdb.sh
 ```
+
+#### OLGA model files
+For the UCA analysis we will be using model files and parameters from OLGA.
+
+### Mac & Linux
+1. Open Terminal and run:
+```bash
+   git clone --no-checkout --depth 1 https://github.com/statbiophys/OLGA.git
+```
+2. The models will be in `OLGA/olga/default_models/`
+
+### Windows
+1. Open PowerShell and run:
+```powershell
+   git clone --no-checkout --depth 1 https://github.com/statbiophys/OLGA.git
+```
+2. The models will be in `OLGA\olga\default_models\`
+
+### Alternative — Download as ZIP (no Git required)
+1. Go to [https://github.com/statbiophys/OLGA](https://github.com/statbiophys/OLGA)
+2. Click the green **Code** button → **Download ZIP**
+3. Extract the ZIP and navigate to `OLGA-master/olga/default_models/`
 
 #### Python
 First, make sure that Python is installed and accessible from the command line:
@@ -175,7 +243,7 @@ system2("python3", args = c("-m", "pip", "install", "missing package name"))
 5. In the package manager, find and install the “TyCHE” package. This tutorial relies on version v0.0.10 or later.
 6. In the package manager, find and install the “rootfreqs” package.
 
-If using BEAUti's graphical interface for the package manager does not work, these 
+If using BEAUti's graphical interface for the package manager does not work, these
 alternative steps work on Mac:
 ```bash
 # alterative for step 3, install BEAST Classic
@@ -184,7 +252,7 @@ alternative steps work on Mac:
 # alternative for step 4, add "extra packages" package repo
 # first confirm that this is the correct path for your beauti.properties file
 ls ~/Library/Application\ Support/BEAST/2.7/beauti.properties
-# add the extra packages repo 
+# add the extra packages repo
 echo "packages.url=https\://raw.githubusercontent.com/CompEvol/CBAN/master/packages-extra-2.7.xml" >> ~/Library/Application\ Support/BEAST/2.7/beauti.properties
 
 # alterative for steps 5 and 6
