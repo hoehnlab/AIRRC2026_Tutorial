@@ -24,6 +24,12 @@ In this tutorial we will use various programs/languages. Below are instructions 
    docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
 
+If you are using Apple Silicon you may need to specify the platform
+```bash
+   docker pull --platform linux/amd64 colejensen/tyche-dowser:latest
+   docker run --platform linux/amd64 -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
 #### Windows
 
 1. Download and install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)

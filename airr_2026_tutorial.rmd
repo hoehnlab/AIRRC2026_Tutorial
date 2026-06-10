@@ -115,7 +115,7 @@ treesToPDF(plots_all, "file_path")
 
 ## Statistical Tests
 
-Dowser supports a number of statistical tests to provide insights into your dataset. Some of these options are a [measurable evolution test](https://dowser.readthedocs.io/en/stable/vignettes/Measurable-Evolution/) and a [discrete traits analysis](<https://dowser.readthedocs.io/en/stable/vignettes/Discrete-Trait-Vignette/>. Guides on how to run these analyzes and more can be found on our [website](https://dowser.readthedocs.io/en/stable/).
+Dowser supports a number of statistical tests to provide insights into your dataset. Some of these options are a [measurable evolution test](https://dowser.readthedocs.io/en/stable/vignettes/Measurable-Evolution/) and a [discrete traits analysis](https://dowser.readthedocs.io/en/stable/vignettes/Discrete-Trait-Vignette/). Guides on how to run these analyzes and more can be found on our [website](https://dowser.readthedocs.io/en/stable/).
 
 ## UCA Inference
 
@@ -157,8 +157,8 @@ To run BEAST2 with Dowser, you will need to specify the path to the BEAST2 execu
 # linux default: "~/beast/bin/"
 # Mac default: "/Applications/BEAST\ 2.7.7/bin/"
 beast <- "/opt/beast/bin/"
-strict_template <- "data/xml-templates/StrictClock/StrictClock_Standard_EmpFreq.xml"
-tyche_template <- "data/xml-templates/TypeLinked/TypeLinkedExpectedOccupancy_EstTraitClockRates_EmpFreq.xml"
+strict_template <- "data/xml-templates/StrictClock_Standard_EmpFreq.xml"
+tyche_template <- "data/xml-templates/TypeLinkedExpectedOccupancy_EstTraitClockRates_EmpFreq.xml"
 
 # we'll also set up a folder for all our BEAST2 outputs, if you have mounted a directory
 # in the Docker container, this may result in a warning as the directory already exists
@@ -399,3 +399,5 @@ You can find all of BEAST's output files, including the trees, logs, console log
 ## Additional configuration examples
 
 We assumed that the example above was a primary GC. TyCHE also works in cases where you expect recall GCs or other GC re-entry. Using a reversible cell differentiation model to allow for GC re-entry is a little more complicated and involves setting the rate indicators to "1 1" and usually adding additional constraints so the model can find an identifiable solution. Please get in touch if you'd like help using TyCHE on your data!
+
+## Questions?
