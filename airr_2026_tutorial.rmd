@@ -396,4 +396,4 @@ You can find all of BEAST's output files, including the trees, logs, console log
 
 ## Additional configuration examples
 
-We assumed that the example above was a primary GC. TyCHE also works in cases where you expect recall GCs or other GC re-entry. To see examples of other scenarios and how you might change your parameters to fit those scenarios, check out [other files]() <!-- TODO: add these -->
+We assumed that the example above was a primary GC. TyCHE also works in cases where you expect recall GCs or other GC re-entry. Using a reversible cell differentiation model to allow for GC re-entry is a little more complicated and involves setting the rate indicators to "1 1" and usually adding additional constraints so the model can find an identifiable solution. Please get in touch if you'd like help using TyCHE on your data!
