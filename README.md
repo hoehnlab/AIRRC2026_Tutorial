@@ -66,6 +66,24 @@ Log in with:
 
 The tutorial `.Rmd` file and all required data will already be in your working directory.
 
+#### All Systems - Optional: Tracer and FigTree
+
+This step is not necessary for following the tutorial and skipping this section
+will not meaningfully impact your experience. 
+
+To monitor your TyCHE runs on the Docker container with graphical user interfaces like 
+the Tracer software (usually included with BEAST2) and FigTree:
+1. [Install Tracer](https://github.com/beast-dev/tracer/releases/tag/v1.7.2) on your local machine 
+2. [Install FigTree](https://github.com/rambaut/figtree/releases) on your local machine
+3. Mount a directory when running Docker, command included below.
+
+This command will link the Docker container to a folder on your local machine called "tyche_tutorial_airr_2026", which
+it will create if it doesn't already exist: 
+
+```bash
+   docker run --volume tyche_tutorial_airr_2026:/data/output/ -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+```
+
 #### Troubleshooting
 Depending on your setup, you may run into some problems launching the container. Below are troubleshooting tips based on your system.
 

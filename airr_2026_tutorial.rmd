@@ -159,6 +159,10 @@ To run BEAST2 with Dowser, you will need to specify the path to the BEAST2 execu
 beast <- "/opt/beast/bin/"
 strict_template <- "data/xml-templates/StrictClock/StrictClock_Standard_EmpFreq.xml"
 tyche_template <- "data/xml-templates/TypeLinked/TypeLinkedExpectedOccupancy_EstTraitClockRates_EmpFreq.xml"
+
+# we'll also set up a folder for all our BEAST2 outputs, if you have mounted a directory
+# in the Docker container, this may result in a warning as the directory already exists
+dir.create("output")
 ```
 
 Steps:
@@ -219,11 +223,11 @@ The next step takes about 5 minutes to run, depending on your machine, as a quic
 gctree = getTimeTreesIterate(gcf,
 	beast=beast,
 	template=strict_template,
-	dir="gc_estimation",
+	dir="output/gc_estimation",
 	id="gc_strict",
 	time="sample_time",
 	mcmc_length=1e5,
-	iterations=5,
+	iterations=4,
 	nproc=1, 
 	CLOCK_RATE_INIT=0.001,
 	KAPPA_PRIOR_M=0.67,
@@ -231,7 +235,7 @@ gctree = getTimeTreesIterate(gcf,
 	ignore=c("freqParameter"))
 ```
 
-`getTimeTreesIterate` is designed to run each analysis iteratively, checking for convergence after each iteration. If the analyses converge before reaching the max iterations, it will stop early. It will run each analysis for `mcmc_length` MCMC samples (here, `1e5`), and it will repeat this up to `iterations` times (here, `5`), so here we have a maximum of 5e5 MCMC samples, which is far too few to expect convergence.
+`getTimeTreesIterate` is designed to run each analysis iteratively, checking for convergence after each iteration. If the analyses converge before reaching the max iterations, it will stop early. It will run each analysis for `mcmc_length` MCMC samples (here, `1e5`), and it will repeat this up to `iterations` times (here, `4`), so here we have a maximum of 4e5 MCMC samples, which is far too few to expect convergence.
 
 The convergence check is based on the ESS of the parameters reported in the log files. You can exclude parameters from this ESS check using the `ignore` argument (here, we ignore `freqParameter`, as it is a fixed value).
 
@@ -284,7 +288,7 @@ mixed_trees <- getTimeTreesIterate(
   template = tyche_template,
   trait    = "location", # this should be just one trait column
   time     = "sample_time",
-  dir      = "tyche_estimation",
+  dir      = "output/tyche_estimation",
   id       = "tyche_tutorial",
   log_every = "auto",
   nproc     = 1,
@@ -331,7 +335,7 @@ You can monitor the progress of BEAST2 runs using tools like Tracer and FigTree.
 
 After the analyses have converged, you can visualize the time trees.
 
-Since the analysis above takes some time to run, we will load in the results from a previous run for the rest of this tutorial.
+Since the analysis above takes quite some time to converge, we will load in the results from a previous run for the rest of this tutorial.
 
 ```{r load-mixed-trees, echo=FALSE}
 mixed_trees <- readRDS("data/mixed_trees.RDS")
@@ -374,8 +378,6 @@ If we're interested in the estimated tree height, we can filter the parameters t
 print(mixed_trees$parameters[[1]] %>% filter(item=="TreeHeight"))
 ```
 
-Our model likely hasn't converged, with multiple parameters having ESS values below 200, particularly the posterior which describes how well the model has converged as a whole. The mean tree height is around 236 time units, with a 95% highest posterior density interval from about 200 to 275 time units. Since we know the data spans 200 time units, this is a high estimate, but this is unsurprising given that the ESS is below 200 and the analysis has likely not converged.
-
 The parameters available will depend on the model you used and what is specified for logging in the XML template. In this case, we can see all the items that were logged:
 
 ```{r logged-parameters}
@@ -387,7 +389,7 @@ These include the posterior, likelihood, and prior probabilities of the full mod
 If you want to revisit an analysis and no longer have the `mixed_trees` object in your R environment, you can use `readBEAST` to read in the BEAST log and tree files from the directory (`dir`) you specified in `getTimeTreesIterate`. Because of this, it is important to always specify a unique combination of `dir` and `id` for each analysis.
 
 ```{r read-beast-output, eval=FALSE}
-mixed_trees <- readBEAST(tyche_clones, dir="tyche_estimation", id="tyche_tutorial", beast=beast, trait=trait)
+mixed_trees <- readBEAST(tyche_clones, dir="output/tyche_estimation", id="tyche_tutorial", beast=beast, trait=type)
 ```
 
 See `?readBEAST` for more details.
