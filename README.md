@@ -21,13 +21,13 @@ In this tutorial we will use various programs/languages. Below are instructions 
 3. Open Terminal and run:
 ```bash
    docker pull colejensen/tyche-dowser:latest
-   docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+   docker run --volume tyche_tutorial_airr_2026:/data/output/ -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
 
 If you are using Apple Silicon you may need to specify the platform
 ```bash
    docker pull --platform linux/amd64 colejensen/tyche-dowser:latest
-   docker run --platform linux/amd64 -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+   docker run --volume tyche_tutorial_airr_2026:/data/output/ -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
 
 #### Windows
@@ -38,7 +38,7 @@ If you are using Apple Silicon you may need to specify the platform
 3. Open PowerShell or Command Prompt and run:
 ```powershell
    docker pull colejensen/tyche-dowser:latest
-   docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+   docker run --volume tyche_tutorial_airr_2026:/data/output/ -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
 
 #### Linux
@@ -56,7 +56,7 @@ If you are using Apple Silicon you may need to specify the platform
 3. Pull and run the image:
 ```bash
    docker pull colejensen/tyche-dowser:latest
-   docker run -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
+   docker run --volume tyche_tutorial_airr_2026:/data/output/ -d --rm -p 8788:8787 -e USER=rstudio -e PASSWORD=rstudio colejensen/tyche-dowser:latest
 ```
 
 #### All Systems — Open RStudio
